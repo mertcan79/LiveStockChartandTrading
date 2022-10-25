@@ -1,4 +1,4 @@
-# LiveStockChartandTrading
+# Live Stock Chart and Trading
 
 FastAPI based live stock tracking & charting and customized trading dashboard.
 
