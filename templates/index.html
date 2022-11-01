@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Creating Real-Time Charts with Flask</title>
+    <title>Creating Real-Time Charts with FastAPI</title>
     <!--suppress JSUnresolvedLibraryURL -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap.min.css"
           integrity="sha512-T584yQ/tdRR5QwOpfvDfVQUidzfgc2339Lc8uBDtcp/wYu80d7jwBgAxbyMh0a9YM9F8N3tdErpFI8iaGx6x5g=="
@@ -215,35 +215,39 @@ div {text-align: center;}
     }
     }
 
-        const source = new EventSource("/chart-data");
-        source.onmessage = function (event) {
-        const data = JSON.parse(event.data);
-        document.getElementById("Statistics").innerText =
-        "Latest entry " + data.value
-        + "\n Moving average is: " + simpleMovingAverage(data.value)
-        + "\n Max drawdown: " + Number(maxDrawdown_(data.value, 0 , 10)).toLocaleString(undefined,{style: 'percent', minimumFractionDigits:2})
-        + "\n RSI:  " + Math.round(rsi(data.value, 9));
-    }
-</script>
-<script>
-          function submitForm(){
-              source.onmessage = function (event) {
+    let bought = false;
+    let bought_price;
+    let profit;
+    let total_profit = 0;
+          async function submitForm(){
+              let source = new EventSource('/chart-data')
+              source.onmessage = async function (event) {
               const data = JSON.parse(event.data);
-                  let bought = false;
+              document.getElementById("Statistics").innerText = "Latest entry " + data.value
+                + "\n Moving average is: " + simpleMovingAverage(data.value)
+                + "\n Max drawdown: " + Number(maxDrawdown_(data.value, 0 , 10)).toLocaleString(undefined,{style: 'percent', minimumFractionDigits:2})
+                + "\n RSI:  " + Math.round(rsi(data.value, 9));
+
+
+
                   const today = new Date();
                   const time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
                   const form = document.getElementById('myForm');
                   const target = form.elements[0].value;
                   const target_sell = form.elements[1].value;
-                  console.log(target, target_sell);
               if (Math.round(rsi(data.value, 9)) >= target && bought === false){
-                  document.getElementById("rsi_status").innerText = "Bought stock at " + time;
                   bought = true;
-             }
-              else if(Math.round(rsi(data.value, 9)) < target && bought === true){
+                   bought_price = data.value;
+                  document.getElementById("rsi_status").innerText = "Bought stock at " + time + ' for ' + data.value;
 
-                  document.getElementById("rsi_status").innerText = "Sold stock at " + time;
+             }
+              else if(Math.round(rsi(data.value, 9)) < target_sell && bought === true){
+                  profit = bought_price - data.value;
+                  total_profit += profit;
                   bought = false;
+                  document.getElementById("rsi_status").innerText = "Sold stock at " + time + ' profit: ' + profit + '\n total profit: ' + total_profit;
+
+
               }
              else {
                  document.getElementById("rsi_status").innerText = "No action was performed";
